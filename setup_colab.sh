@@ -6,7 +6,7 @@ set -e
 echo "🚀 Setting up Solana Pump.fun Trading Bot..."
 
 # Install Python dependencies
-pip install gradio==4.19.2 Pillow>=9.0.0 -q
+pip install gradio==4.44.1 Pillow>=9.0.0 -q
 
 # Create app directory
 mkdir -p solana-trading-bot

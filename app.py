@@ -30,9 +30,12 @@ if __name__ == "__main__":
     # În Colab, setăm share=True pentru acces public
     import sys
     is_colab = 'google.colab' in sys.modules
-    
+
+    # CLI override: `python app.py --share`
+    force_share = "--share" in sys.argv
+
     app.launch(
-        share=True if is_colab else False,
+        share=True if is_colab or force_share else False,
         server_name="0.0.0.0",
         server_port=7860,
         height=1000,

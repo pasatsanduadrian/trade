@@ -29,7 +29,10 @@ solana-pump-trading-bot/
 !git clone https://github.com/YOUR_USERNAME/solana-pump-trading-bot.git
 %cd solana-pump-trading-bot
 !pip install -r requirements.txt
+# The script detects Google Colab and automatically launches with `share=True`
 !python app.py
+# If you don't see a public URL, run again with:
+!python app.py --share
 ```
 
 After running, click the generated Gradio public URL to open the interface.
@@ -45,7 +48,7 @@ cd solana-pump-trading-bot
 pip install -r requirements.txt
 
 # Run application
-python app.py
+python app.py  # add `--share` to expose a public URL
 ```
 
 ## 🔧 Configuration

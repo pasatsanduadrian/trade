@@ -45,7 +45,7 @@ solana-pump-trading-bot/
 3. Upload fișierele: `app.py`, `index.html`, `requirements.txt`
 4. Rulează:
    ```python
-   !pip install gradio==4.19.2
+   !pip install gradio==4.44.1
    !python app.py
    ```
 
