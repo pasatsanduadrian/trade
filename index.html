@@ -1,17 +1,1143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Pump.fun Trading Bot - AI Enhanced</title>
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; }
-        .container { padding: 2rem; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #9945FF;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .solana-gradient {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wallet-info {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .wallet-balance {
+            background: rgba(153, 69, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #9945FF;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(20, 241, 149, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #14F195;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            background: #0f0f0f;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab {
+            padding: 0.5rem 1.5rem;
+            background: #1a1a2e;
+            border: none;
+            color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            color: #000;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .pump-scanner {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #9945FF;
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .scanner-filters {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 0.5rem;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        .ai-analysis-card {
+            background: linear-gradient(135deg, rgba(20, 241, 149, 0.1), rgba(153, 69, 255, 0.1));
+            border: 1px solid #14F195;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .ai-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #14F195;
+        }
+
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .token-card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #333;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .token-card:hover {
+            transform: translateY(-5px);
+            border-color: #9945FF;
+        }
+
+        .pump-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff6b6b;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .ai-recommendation {
+            background: rgba(20, 241, 149, 0.2);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #14F195;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .control-panel {
+            background: #1a1a2e;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .phantom-btn {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            color: #000;
+        }
+
+        .start-btn {
+            background: #14F195;
+            color: #000;
+        }
+
+        .stop-btn {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .api-config {
+            background: #0f0f0f;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border: 1px solid #333;
+        }
+
+        .api-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: #1a1a2e;
+            border: 1px solid #333;
+            color: #e0e0e0;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            font-family: monospace;
+        }
+
+        .position-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .position-table th {
+            background: #1a1a2e;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid #9945FF;
+        }
+
+        .position-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .profit-positive {
+            color: #14F195;
+        }
+
+        .profit-negative {
+            color: #ff4444;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-indicator.active {
+            background: #14F195;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: #ff4444;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .alert.success {
+            background: #14F195;
+            color: #000;
+        }
+
+        .alert.error {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        .alert.info {
+            background: #9945FF;
+            color: #fff;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #9945FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ai-thinking {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #14F195;
+            font-style: italic;
+        }
+
+        .code-block {
+            background: #0f0f0f;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Solana Pump.fun Trading Bot</h1>
-        <p>This placeholder HTML file represents the web interface for the trading bot. Replace this file with the complete HTML from the original artifact if available.</p>
+    <div class="header">
+        <h1>đźš€ <span class="solana-gradient">Solana Pump.fun Trading Bot</span></h1>
+        <div class="wallet-info">
+            <div class="ai-status">
+                <span class="status-indicator inactive" id="aiStatus"></span>
+                <span>AI Analysis</span>
+            </div>
+            <div class="wallet-balance">
+                <span id="walletAddress">Not Connected</span>
+                <span id="walletBalance"></span>
+            </div>
+            <button id="connectPhantom" class="control-btn phantom-btn">Connect Phantom</button>
+        </div>
     </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="config">AI Config</button>
+        <button class="tab" data-tab="scanner">Pump Scanner</button>
+        <button class="tab" data-tab="signals">AI Signals</button>
+        <button class="tab" data-tab="bot">Bot Trading</button>
+        <button class="tab" data-tab="pnl">P&L Monitor</button>
+    </div>
+
+    <div id="config" class="tab-content active">
+        <h2>đź¤– AI Configuration</h2>
+        <div class="api-config">
+            <h3>OpenAI API Configuration</h3>
+            <p>Pentru a activa analiza AI, introdu cheia ta API OpenAI:</p>
+            <input type="password" id="openaiApiKey" class="api-input" placeholder="sk-...">
+            <button id="saveApiKey" class="control-btn start-btn">Save API Key</button>
+            
+            <div class="code-block">
+                <strong>Cum funcČ›ioneazÄ AI Analysis:</strong><br>
+                1. ScaneazÄ pump.fun pentru tokens noi<br>
+                2. AnalizeazÄ: volume patterns, holder distribution, social signals<br>
+                3. GenereazÄ AI score (0-100) pentru fiecare token<br>
+                4. RecomandÄ buy/hold/skip bazat pe pattern recognition<br>
+                5. ExecutÄ automat trades pentru score > 85
+            </div>
+        </div>
+
+        <div class="api-config">
+            <h3>Pump.fun Integration</h3>
+            <p>Status: <span id="pumpStatus" class="profit-positive">Connected</span></p>
+            <p>Endpoint: wss://pump.fun/api/v1/stream</p>
+            <p>Scan Interval: 1 second</p>
+        </div>
+    </div>
+
+    <div id="scanner" class="tab-content">
+        <h2>đź”Ť Pump.fun Scanner</h2>
+        <div class="pump-scanner">
+            <div class="scanner-header">
+                <h3>Real-time Token Discovery</h3>
+                <div class="scanner-filters">
+                    <input type="number" id="minLiquidity" class="filter-input" placeholder="Min Liquidity (SOL)" value="10">
+                    <input type="number" id="maxAge" class="filter-input" placeholder="Max Age (minutes)" value="30">
+                    <input type="number" id="minHolders" class="filter-input" placeholder="Min Holders" value="50">
+                    <select id="aiScoreFilter" class="filter-input">
+                        <option value="0">All AI Scores</option>
+                        <option value="70">AI Score > 70</option>
+                        <option value="80">AI Score > 80</option>
+                        <option value="90">AI Score > 90</option>
+                    </select>
+                </div>
+            </div>
+            <div id="scannerMetrics" class="metrics-grid"></div>
+        </div>
+        <div id="pumpTokens" class="token-grid"></div>
+    </div>
+
+    <div id="signals" class="tab-content">
+        <h2>đź“Š AI Trading Signals</h2>
+        <div class="control-panel">
+            <button id="toggleAI" class="control-btn start-btn">Enable AI Analysis</button>
+            <div>
+                <span class="status-indicator inactive" id="aiAnalysisStatus"></span>
+                <span>AI Analysis Engine</span>
+            </div>
+            <div class="ai-thinking" id="aiThinking" style="display: none;">
+                AI is analyzing...
+                <span class="loading"></span>
+            </div>
+        </div>
+        <div id="aiSignals"></div>
+    </div>
+
+    <div id="bot" class="tab-content">
+        <h2>đź¤– Automated Trading</h2>
+        <div class="control-panel">
+            <button id="startBot" class="control-btn start-btn">Start Bot</button>
+            <button id="stopBot" class="control-btn stop-btn">Stop Bot</button>
+            <div>
+                <span class="status-indicator inactive" id="botStatus"></span>
+                <span>Trading Bot</span>
+            </div>
+        </div>
+        <div class="metrics-grid" id="botMetrics"></div>
+        <div id="activeTradesContainer"></div>
+    </div>
+
+    <div id="pnl" class="tab-content">
+        <h2>đź’° P&L Monitor</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div>Wallet Balance</div>
+                <div class="metric-value" id="pnlWalletBalance">0 SOL</div>
+            </div>
+            <div class="metric-card">
+                <div>Total Profit</div>
+                <div class="metric-value profit-positive" id="totalProfit">+0 SOL</div>
+            </div>
+            <div class="metric-card">
+                <div>Total Gas Fees</div>
+                <div class="metric-value profit-negative" id="totalGasFees">-0 SOL</div>
+            </div>
+            <div class="metric-card">
+                <div>AI Success Rate</div>
+                <div class="metric-value" id="aiSuccessRate">0%</div>
+            </div>
+        </div>
+        <h3>Position History</h3>
+        <table class="position-table">
+            <thead>
+                <tr>
+                    <th>Token</th>
+                    <th>AI Score</th>
+                    <th>Buy Price</th>
+                    <th>Sell Price</th>
+                    <th>Quantity</th>
+                    <th>Gas Fees</th>
+                    <th>P&L</th>
+                    <th>ROI</th>
+                    <th>AI Decision</th>
+                </tr>
+            </thead>
+            <tbody id="positionsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Solana & Phantom Integration
+        const PUMP_FUN_PROGRAM_ID = '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwz7P';
+        const PUMP_API_ENDPOINT = 'https://api.pump.fun/v1';
+        
+        // State Management
+        const state = {
+            wallet: {
+                connected: false,
+                publicKey: null,
+                balance: 0,
+                phantom: null
+            },
+            ai: {
+                enabled: false,
+                apiKey: null,
+                analyzing: false
+            },
+            bot: {
+                running: false,
+                positions: new Map(),
+                signals: [],
+                pumpTokens: []
+            },
+            metrics: {
+                tokensScanned: 0,
+                newTokensFound: 0,
+                aiAnalyzed: 0,
+                highScoreTokens: 0,
+                totalTrades: 0,
+                successfulTrades: 0,
+                totalProfit: 0,
+                totalGasFees: 0
+            }
+        };
+
+        // Phantom Wallet Connection
+        async function connectPhantom() {
+            try {
+                const isPhantomInstalled = window.solana && window.solana.isPhantom;
+                
+                if (!isPhantomInstalled) {
+                    showAlert('Please install Phantom wallet!', 'error');
+                    window.open('https://phantom.app/', '_blank');
+                    return;
+                }
+
+                const response = await window.solana.connect();
+                state.wallet.phantom = window.solana;
+                state.wallet.publicKey = response.publicKey.toString();
+                state.wallet.connected = true;
+
+                await updateWalletBalance();
+                updateWalletUI();
+                showAlert('Phantom wallet connected!', 'success');
+                
+                // Start listening to account changes
+                window.solana.on('accountChanged', () => {
+                    updateWalletBalance();
+                });
+                
+            } catch (error) {
+                console.error('Wallet connection error:', error);
+                showAlert('Failed to connect Phantom wallet', 'error');
+            }
+        }
+
+        async function updateWalletBalance() {
+            if (!state.wallet.connected) return;
+            
+            try {
+                const connection = new solanaWeb3.Connection(
+                    'https://api.mainnet-beta.solana.com',
+                    'confirmed'
+                );
+                
+                const publicKey = new solanaWeb3.PublicKey(state.wallet.publicKey);
+                const balance = await connection.getBalance(publicKey);
+                state.wallet.balance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                updateWalletUI();
+            } catch (error) {
+                console.error('Balance update error:', error);
+            }
+        }
+
+        function updateWalletUI() {
+            const addressEl = document.getElementById('walletAddress');
+            const balanceEl = document.getElementById('walletBalance');
+            const pnlBalanceEl = document.getElementById('pnlWalletBalance');
+            const connectBtn = document.getElementById('connectPhantom');
+
+            if (state.wallet.connected) {
+                addressEl.textContent = `${state.wallet.publicKey.slice(0, 4)}...${state.wallet.publicKey.slice(-4)}`;
+                balanceEl.textContent = ` | ${state.wallet.balance.toFixed(4)} SOL`;
+                pnlBalanceEl.textContent = `${state.wallet.balance.toFixed(4)} SOL`;
+                connectBtn.textContent = 'Connected';
+                connectBtn.disabled = true;
+            }
+        }
+
+        // OpenAI Integration
+        async function analyzeTokenWithAI(tokenData) {
+            if (!state.ai.apiKey || !state.ai.enabled) return null;
+            
+            state.ai.analyzing = true;
+            document.getElementById('aiThinking').style.display = 'flex';
+            
+            try {
+                const prompt = `
+                Analyze this Solana pump.fun token for trading potential:
+                
+                Token: ${tokenData.name} (${tokenData.symbol})
+                Contract: ${tokenData.address}
+                Age: ${tokenData.age} minutes
+                Liquidity: ${tokenData.liquidity} SOL
+                Holders: ${tokenData.holders}
+                Volume 5m: ${tokenData.volume5m} SOL
+                Price Change 5m: ${tokenData.priceChange5m}%
+                Buy/Sell Ratio: ${tokenData.buySellRatio}
+                
+                Consider:
+                1. Is this likely a pump & dump?
+                2. Holder distribution health
+                3. Volume patterns
+                4. Entry risk level
+                
+                Respond with JSON only:
+                {
+                    "score": 0-100,
+                    "recommendation": "BUY" | "WAIT" | "SKIP",
+                    "reasoning": "brief explanation",
+                    "riskLevel": "LOW" | "MEDIUM" | "HIGH",
+                    "suggestedEntry": "price in SOL",
+                    "suggestedExit": "price in SOL"
+                }
+                `;
+
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.ai.apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4',
+                        messages: [
+                            {
+                                role: 'system',
+                                content: 'You are an expert crypto trader specializing in Solana memecoins and pump.fun tokens. Analyze for quick profits while managing risk.'
+                            },
+                            {
+                                role: 'user',
+                                content: prompt
+                            }
+                        ],
+                        temperature: 0.3,
+                        response_format: { type: "json_object" }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('OpenAI API error');
+                }
+
+                const data = await response.json();
+                const analysis = JSON.parse(data.choices[0].message.content);
+                
+                state.metrics.aiAnalyzed++;
+                if (analysis.score > 85) {
+                    state.metrics.highScoreTokens++;
+                }
+                
+                return analysis;
+                
+            } catch (error) {
+                console.error('AI analysis error:', error);
+                showAlert('AI analysis failed', 'error');
+                return null;
+            } finally {
+                state.ai.analyzing = false;
+                document.getElementById('aiThinking').style.display = 'none';
+            }
+        }
+
+        // Pump.fun Scanner
+        async function scanPumpFun() {
+            try {
+                // Simulate pump.fun API response (Ă®n producČ›ie, foloseČ™te API real)
+                const mockTokens = [
+                    {
+                        address: 'DezXAZ8z7PnrnRJjz3wXBoR8UDpRXmGPZ8KRwHkjp3H',
+                        name: 'BONK INU',
+                        symbol: 'BONK',
+                        age: 5,
+                        liquidity: 125.5,
+                        holders: 1250,
+                        volume5m: 45.2,
+                        priceChange5m: 15.3,
+                        buySellRatio: 2.1,
+                        price: 0.00000234
+                    },
+                    {
+                        address: 'EKpQGSJtjMFqKZ3KYgR8g8kJ5qWRXboR8UDpRXmGPZ8',
+                        name: 'PEPE SOLANA',
+                        symbol: 'PEPES',
+                        age: 12,
+                        liquidity: 85.3,
+                        holders: 856,
+                        volume5m: 28.7,
+                        priceChange5m: -5.2,
+                        buySellRatio: 0.8,
+                        price: 0.00000567
+                    },
+                    {
+                        address: 'FzXAZ8z7PnrnRJjz3wXBoR8UDpRXmGPZ8KRwHkjpQA',
+                        name: 'WOJAK PUMP',
+                        symbol: 'WOJAK',
+                        age: 2,
+                        liquidity: 250.8,
+                        holders: 2100,
+                        volume5m: 125.3,
+                        priceChange5m: 45.7,
+                        buySellRatio: 3.5,
+                        price: 0.00000089
+                    }
+                ];
+
+                // Filter tokens based on settings
+                const minLiquidity = parseFloat(document.getElementById('minLiquidity').value) || 10;
+                const maxAge = parseFloat(document.getElementById('maxAge').value) || 30;
+                const minHolders = parseFloat(document.getElementById('minHolders').value) || 50;
+
+                const filteredTokens = mockTokens.filter(token => 
+                    token.liquidity >= minLiquidity &&
+                    token.age <= maxAge &&
+                    token.holders >= minHolders
+                );
+
+                state.metrics.tokensScanned += mockTokens.length;
+                state.metrics.newTokensFound += filteredTokens.length;
+
+                // Add AI analysis if enabled
+                for (const token of filteredTokens) {
+                    if (state.ai.enabled) {
+                        token.aiAnalysis = await analyzeTokenWithAI(token);
+                    }
+                    state.bot.pumpTokens.push(token);
+                }
+
+                updateScannerUI();
+                updateMetrics();
+                
+                // Auto-convert high score tokens to signals
+                if (state.bot.running && state.ai.enabled) {
+                    const highScoreTokens = filteredTokens.filter(t => 
+                        t.aiAnalysis && t.aiAnalysis.score > 85 && t.aiAnalysis.recommendation === 'BUY'
+                    );
+                    
+                    for (const token of highScoreTokens) {
+                        createSignalFromToken(token);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Pump.fun scan error:', error);
+            }
+        }
+
+        function createSignalFromToken(token) {
+            const signal = {
+                id: Date.now(),
+                token: token.symbol,
+                address: token.address,
+                type: 'BUY',
+                price: token.price,
+                aiScore: token.aiAnalysis.score,
+                recommendation: token.aiAnalysis.recommendation,
+                reasoning: token.aiAnalysis.reasoning,
+                suggestedEntry: token.aiAnalysis.suggestedEntry,
+                suggestedExit: token.aiAnalysis.suggestedExit,
+                riskLevel: token.aiAnalysis.riskLevel,
+                timestamp: new Date()
+            };
+            
+            state.bot.signals.push(signal);
+            updateSignalsUI();
+            
+            // Auto-execute if bot is running
+            if (state.bot.running && signal.aiScore > 90) {
+                setTimeout(() => executeTrade(signal), 2000);
+            }
+        }
+
+        async function executeTrade(signal) {
+            if (!state.wallet.connected) {
+                showAlert('Wallet not connected!', 'error');
+                return;
+            }
+
+            try {
+                // ĂŽn producČ›ie, aici ar fi codul real pentru Solana transaction
+                const position = {
+                    id: Date.now(),
+                    token: signal.token,
+                    address: signal.address,
+                    buyPrice: signal.price,
+                    currentPrice: signal.price,
+                    quantity: 0.1 / signal.price, // 0.1 SOL worth
+                    gasFees: 0.00025, // Solana gas fee
+                    aiScore: signal.aiScore,
+                    aiDecision: signal.recommendation,
+                    timestamp: new Date(),
+                    status: 'active'
+                };
+
+                state.bot.positions.set(position.id, position);
+                state.metrics.totalTrades++;
+                state.metrics.totalGasFees += position.gasFees;
+
+                showAlert(`AI Trade executed: Bought ${position.quantity.toFixed(2)} ${signal.token} (AI Score: ${signal.aiScore})`, 'success');
+                updatePositionsUI();
+                monitorPosition(position.id);
+                
+            } catch (error) {
+                console.error('Trade execution error:', error);
+                showAlert('Trade execution failed', 'error');
+            }
+        }
+
+        function monitorPosition(positionId) {
+            const interval = setInterval(() => {
+                const position = state.bot.positions.get(positionId);
+                if (!position || position.status !== 'active') {
+                    clearInterval(interval);
+                    return;
+                }
+
+                // Simulate price movement
+                const volatility = 0.05;
+                const trend = position.aiScore > 85 ? 0.001 : -0.001;
+                const priceChange = (Math.random() - 0.5) * volatility + trend;
+                position.currentPrice = position.currentPrice * (1 + priceChange);
+
+                const roi = ((position.currentPrice - position.buyPrice) / position.buyPrice) * 100;
+
+                // AI-based exit strategy
+                if (roi >= 30 || roi <= -10) {
+                    closePosition(positionId, roi > 0 ? 'ai-take-profit' : 'ai-stop-loss');
+                }
+
+                updatePositionsUI();
+            }, 1000);
+        }
+
+        function closePosition(positionId, reason) {
+            const position = state.bot.positions.get(positionId);
+            if (!position) return;
+
+            position.status = 'closed';
+            position.sellPrice = position.currentPrice;
+            position.closeReason = reason;
+            
+            const profit = (position.currentPrice - position.buyPrice) * position.quantity - position.gasFees;
+            state.metrics.totalProfit += profit;
+            
+            if (profit > 0) {
+                state.metrics.successfulTrades++;
+            }
+
+            showAlert(`Position closed (${reason}): ${profit > 0 ? '+' : ''}${profit.toFixed(4)} SOL`, 
+                     profit > 0 ? 'success' : 'error');
+            
+            updatePositionsUI();
+            updateMetrics();
+        }
+
+        // UI Updates
+        function updateScannerUI() {
+            const metricsContainer = document.getElementById('scannerMetrics');
+            metricsContainer.innerHTML = `
+                <div class="metric-card">
+                    <div>Tokens Scanned</div>
+                    <div class="metric-value">${state.metrics.tokensScanned}</div>
+                </div>
+                <div class="metric-card">
+                    <div>New Tokens Found</div>
+                    <div class="metric-value">${state.metrics.newTokensFound}</div>
+                </div>
+                <div class="metric-card">
+                    <div>AI Analyzed</div>
+                    <div class="metric-value">${state.metrics.aiAnalyzed}</div>
+                </div>
+                <div class="metric-card">
+                    <div>High Score (>85)</div>
+                    <div class="metric-value">${state.metrics.highScoreTokens}</div>
+                </div>
+            `;
+
+            const tokensContainer = document.getElementById('pumpTokens');
+            const aiScoreFilter = parseInt(document.getElementById('aiScoreFilter').value);
+            
+            const filteredTokens = state.bot.pumpTokens.filter(token => 
+                !token.aiAnalysis || token.aiAnalysis.score >= aiScoreFilter
+            );
+
+            tokensContainer.innerHTML = filteredTokens.slice(-12).reverse().map(token => `
+                <div class="token-card">
+                    <span class="pump-badge">PUMP.FUN</span>
+                    <h3>${token.name} (${token.symbol})</h3>
+                    <p>Contract: ${token.address.slice(0, 8)}...</p>
+                    <p>Age: ${token.age} minutes | Holders: ${token.holders}</p>
+                    <p>Liquidity: ${token.liquidity.toFixed(2)} SOL</p>
+                    <p>Volume 5m: ${token.volume5m.toFixed(2)} SOL</p>
+                    <p>Price Change: <span class="${token.priceChange5m > 0 ? 'profit-positive' : 'profit-negative'}">
+                        ${token.priceChange5m > 0 ? '+' : ''}${token.priceChange5m.toFixed(2)}%
+                    </span></p>
+                    <p>Buy/Sell Ratio: ${token.buySellRatio.toFixed(2)}</p>
+                    ${token.aiAnalysis ? `
+                        <div class="ai-recommendation">
+                            <div class="ai-score">AI Score: ${token.aiAnalysis.score}/100</div>
+                            <p>Recommendation: <strong>${token.aiAnalysis.recommendation}</strong></p>
+                            <p>${token.aiAnalysis.reasoning}</p>
+                            <p>Risk: ${token.aiAnalysis.riskLevel}</p>
+                        </div>
+                    ` : ''}
+                    <button class="control-btn start-btn" style="width: 100%; margin-top: 1rem;" 
+                            onclick='quickBuy(${JSON.stringify(token)})'>
+                        Quick Buy
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updateSignalsUI() {
+            const container = document.getElementById('aiSignals');
+            container.innerHTML = state.bot.signals.slice(-6).reverse().map(signal => `
+                <div class="ai-analysis-card">
+                    <h3>${signal.token} - AI Signal</h3>
+                    <div class="ai-score">Score: ${signal.aiScore}/100</div>
+                    <p>Action: <strong>${signal.recommendation}</strong></p>
+                    <p>${signal.reasoning}</p>
+                    <p>Entry: ${signal.suggestedEntry} SOL | Exit: ${signal.suggestedExit} SOL</p>
+                    <p>Risk Level: <span class="${signal.riskLevel === 'LOW' ? 'profit-positive' : 
+                                               signal.riskLevel === 'HIGH' ? 'profit-negative' : ''}">
+                        ${signal.riskLevel}
+                    </span></p>
+                    <button class="control-btn start-btn" onclick='executeTrade(${JSON.stringify(signal).replace(/"/g, '&quot;')})'>
+                        Execute AI Trade
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function updatePositionsUI() {
+            const tbody = document.getElementById('positionsTable');
+            tbody.innerHTML = Array.from(state.bot.positions.values()).map(pos => {
+                const pnl = pos.status === 'closed' 
+                    ? (pos.sellPrice - pos.buyPrice) * pos.quantity - pos.gasFees
+                    : (pos.currentPrice - pos.buyPrice) * pos.quantity - pos.gasFees;
+                const roi = pos.status === 'closed'
+                    ? ((pos.sellPrice - pos.buyPrice) / pos.buyPrice) * 100
+                    : ((pos.currentPrice - pos.buyPrice) / pos.buyPrice) * 100;
+                
+                return `
+                    <tr>
+                        <td>${pos.token}</td>
+                        <td>${pos.aiScore || 'N/A'}</td>
+                        <td>${pos.buyPrice.toFixed(8)}</td>
+                        <td>${pos.sellPrice ? pos.sellPrice.toFixed(8) : '-'}</td>
+                        <td>${pos.quantity.toFixed(2)}</td>
+                        <td>${pos.gasFees.toFixed(5)} SOL</td>
+                        <td class="${pnl > 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${pnl > 0 ? '+' : ''}${pnl.toFixed(4)} SOL
+                        </td>
+                        <td class="${roi > 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${roi > 0 ? '+' : ''}${roi.toFixed(2)}%
+                        </td>
+                        <td>${pos.aiDecision || pos.closeReason || 'Active'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Update bot metrics
+            const botMetricsContainer = document.getElementById('botMetrics');
+            const activePositions = Array.from(state.bot.positions.values()).filter(p => p.status === 'active');
+            
+            botMetricsContainer.innerHTML = `
+                <div class="metric-card">
+                    <div>Active Positions</div>
+                    <div class="metric-value">${activePositions.length}</div>
+                </div>
+                <div class="metric-card">
+                    <div>Total Trades</div>
+                    <div class="metric-value">${state.metrics.totalTrades}</div>
+                </div>
+                <div class="metric-card">
+                    <div>Successful Trades</div>
+                    <div class="metric-value">${state.metrics.successfulTrades}</div>
+                </div>
+                <div class="metric-card">
+                    <div>Win Rate</div>
+                    <div class="metric-value">${state.metrics.totalTrades > 0 ? 
+                        ((state.metrics.successfulTrades / state.metrics.totalTrades) * 100).toFixed(1) : 0}%</div>
+                </div>
+            `;
+        }
+
+        function updateMetrics() {
+            const netProfit = state.metrics.totalProfit - state.metrics.totalGasFees;
+            const aiSuccessRate = state.metrics.totalTrades > 0 
+                ? (state.metrics.successfulTrades / state.metrics.totalTrades) * 100 
+                : 0;
+
+            document.getElementById('totalProfit').textContent = 
+                `${state.metrics.totalProfit > 0 ? '+' : ''}${state.metrics.totalProfit.toFixed(4)} SOL`;
+            document.getElementById('totalGasFees').textContent = 
+                `-${state.metrics.totalGasFees.toFixed(5)} SOL`;
+            document.getElementById('aiSuccessRate').textContent = 
+                `${aiSuccessRate.toFixed(1)}%`;
+        }
+
+        // Tab Navigation
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Event Listeners
+        document.getElementById('connectPhantom').addEventListener('click', connectPhantom);
+
+        document.getElementById('saveApiKey').addEventListener('click', () => {
+            const apiKey = document.getElementById('openaiApiKey').value;
+            if (!apiKey || !apiKey.startsWith('sk-')) {
+                showAlert('Invalid OpenAI API key', 'error');
+                return;
+            }
+            
+            state.ai.apiKey = apiKey;
+            showAlert('OpenAI API key saved!', 'success');
+            document.getElementById('aiStatus').classList.add('active');
+            document.getElementById('aiStatus').classList.remove('inactive');
+        });
+
+        document.getElementById('toggleAI').addEventListener('click', (e) => {
+            if (!state.ai.apiKey) {
+                showAlert('Please configure OpenAI API key first!', 'error');
+                return;
+            }
+            
+            state.ai.enabled = !state.ai.enabled;
+            e.target.textContent = state.ai.enabled ? 'Disable AI Analysis' : 'Enable AI Analysis';
+            
+            const status = document.getElementById('aiAnalysisStatus');
+            status.classList.toggle('active', state.ai.enabled);
+            status.classList.toggle('inactive', !state.ai.enabled);
+            
+            showAlert(`AI Analysis ${state.ai.enabled ? 'enabled' : 'disabled'}!`, 
+                     state.ai.enabled ? 'success' : 'info');
+        });
+
+        document.getElementById('startBot').addEventListener('click', () => {
+            if (!state.wallet.connected) {
+                showAlert('Please connect Phantom wallet first!', 'error');
+                return;
+            }
+            
+            state.bot.running = true;
+            document.getElementById('botStatus').classList.remove('inactive');
+            document.getElementById('botStatus').classList.add('active');
+            showAlert('Trading bot started!', 'success');
+            
+            // Start scanning
+            scanPumpFun();
+            setInterval(scanPumpFun, 5000);
+        });
+
+        document.getElementById('stopBot').addEventListener('click', () => {
+            state.bot.running = false;
+            document.getElementById('botStatus').classList.remove('active');
+            document.getElementById('botStatus').classList.add('inactive');
+            showAlert('Trading bot stopped!', 'error');
+        });
+
+        // Filter change listeners
+        ['minLiquidity', 'maxAge', 'minHolders', 'aiScoreFilter'].forEach(id => {
+            document.getElementById(id).addEventListener('change', updateScannerUI);
+        });
+
+        // Utils
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            document.body.appendChild(alert);
+            
+            setTimeout(() => alert.remove(), 4000);
+        }
+
+        // Global functions for onclick handlers
+        window.quickBuy = async (token) => {
+            if (!state.wallet.connected) {
+                showAlert('Please connect Phantom wallet!', 'error');
+                return;
+            }
+            
+            if (token.aiAnalysis && state.ai.enabled) {
+                createSignalFromToken(token);
+            } else {
+                // Manual buy without AI
+                const signal = {
+                    token: token.symbol,
+                    address: token.address,
+                    price: token.price,
+                    type: 'BUY'
+                };
+                executeTrade(signal);
+            }
+        };
+
+        window.executeTrade = executeTrade;
+    </script>
 </body>
 </html>
